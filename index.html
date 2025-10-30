@@ -1,0 +1,453 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Full-Screen Exam — Computer Functioning</title>
+<style>
+  :root{--bg:#0f1724;--card:#0b1220;--accent:#0ea5a4;--muted:#94a3b8;--text:#e6eef6}
+  html,body{height:100%;margin:0;font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,"Helvetica Neue",Arial}
+  body{background:linear-gradient(180deg,#071028 0%, #081428 60%);color:var(--text);display:flex;align-items:center;justify-content:center}
+  .app{width:100%;height:100%;display:flex;flex-direction:column}
+  header{display:flex;align-items:center;justify-content:space-between;padding:18px 28px;background:transparent}
+  .brand{font-weight:700;font-size:20px;letter-spacing:0.4px}
+  .timer{font-weight:700;background:rgba(255,255,255,0.04);padding:10px 14px;border-radius:10px}
+  main{flex:1;display:flex;align-items:center;justify-content:center;padding:24px}
+  .card{width:min(1100px,95%);background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));border-radius:14px;padding:28px;box-shadow:0 10px 30px rgba(0,0,0,0.6);display:flex;flex-direction:column;gap:18px;height:78%}
+  .meta{display:flex;justify-content:space-between;align-items:center}
+  .qnum{font-weight:700;font-size:18px;color:var(--accent)}
+  .progress{font-size:14px;color:var(--muted)}
+  .question-area{flex:1;display:flex;flex-direction:column;gap:14px;overflow:auto;padding-right:8px}
+  .question{font-size:20px;line-height:1.4}
+  .options{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:8px}
+  .opt{background:rgba(255,255,255,0.02);padding:12px;border-radius:10px;border:1px solid rgba(255,255,255,0.03);cursor:pointer;user-select:none;display:flex;gap:12px;align-items:center}
+  .opt.selected{outline:2px solid rgba(14,165,164,0.16);background:linear-gradient(90deg, rgba(14,165,164,0.04), transparent)}
+  .controls{display:flex;justify-content:space-between;align-items:center;margin-top:10px}
+  .btn{background:var(--accent);color:#012; padding:10px 14px;border-radius:10px;border:none;font-weight:700;cursor:pointer}
+  .btn.ghost{background:transparent;border:1px solid rgba(255,255,255,0.04);color:var(--text)}
+  footer{padding:12px 28px;display:flex;justify-content:space-between;align-items:center;color:var(--muted);font-size:13px}
+  .results{padding:22px;background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));border-radius:12px}
+  @media (max-width:720px){
+    .options{grid-template-columns:1fr;gap:10px}
+    .question{font-size:18px}
+  }
+</style>
+</head>
+<body>
+<div class="app" role="application" aria-label="Exam application">
+  <header>
+    <div class="brand">Computer Functioning — Exam</div>
+    <div class="timer" id="timer">60:00</div>
+  </header>
+
+  <main>
+    <div class="card" id="card" role="main">
+      <div class="meta">
+        <div class="qnum" id="qnum">Question 1</div>
+        <div class="progress" id="progress">1 / 30</div>
+      </div>
+
+      <div class="question-area">
+        <div class="question" id="questionText">Loading...</div>
+        <div class="options" id="options"></div>
+      </div>
+
+      <div class="controls">
+        <div>
+          <button class="btn ghost" id="prevBtn">&larr; Prev</button>
+          <button class="btn ghost" id="nextBtn">Next &rarr;</button>
+        </div>
+        <div>
+          <button class="btn" id="submitBtn">Submit Exam</button>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <footer>
+    <div id="status">Questions sourced from lecture slides (von Neumann, buses, interrupts, DMA, QPI, PCIe). :contentReference[oaicite:32]{index=32}</div>
+    <div>Time allowed: 60 minutes • Auto-submit on timeout</div>
+  </footer>
+</div>
+
+<!-- Question bank: 30 MCQs (derived from the lecture PDF). Each item: {q, options:[], answer: index, explanation} -->
+<script>
+const QUESTIONS = [
+  {
+    q: "Which of the following lists the three key concepts of the von Neumann architecture?",
+    options: [
+      "Separate memories for instructions and data; concurrent execution; memory mapped I/O",
+      "Data and instructions in single read-write memory; memory addressability; sequential execution",
+      "Cache-coherent shared memory; multiple instruction pipelines; speculative execution",
+      "Harvard architecture; microcoded control; direct memory access"
+    ],
+    answer: 1,
+    explanation: "von Neumann: single memory for data+instructions, memory addressable by location, sequential execution unless changed. :contentReference[oaicite:33]{index=33}"
+  },
+  {
+    q: "What does the Memory Address Register (MAR) contain?",
+    options: [
+      "Data to be written into memory",
+      "An address specifying the memory location for next read/write",
+      "The next instruction to be executed",
+      "I/O device status"
+    ],
+    answer: 1,
+    explanation: "MAR holds the address for the next memory read/write. :contentReference[oaicite:34]{index=34}"
+  },
+  {
+    q: "Which register typically holds the instruction currently being executed?",
+    options: ["MAR", "MBR", "IR (Instruction Register)", "AC (Accumulator)"],
+    answer: 2,
+    explanation: "IR holds the fetched instruction; AC is temporary storage for data. :contentReference[oaicite:35]{index=35}"
+  },
+  {
+    q: "What is the primary advantage of using interrupts over polling?",
+    options: [
+      "Simpler hardware design",
+      "Lower latency for I/O completion",
+      "CPU avoids busy-waiting and can do useful work until an interrupt arrives",
+      "Interrupts eliminate the need for device drivers"
+    ],
+    answer: 2,
+    explanation: "Interrupts let CPU continue useful work instead of constantly checking device status. :contentReference[oaicite:36]{index=36}"
+  },
+  {
+    q: "Direct Memory Access (DMA) is used to:",
+    options: [
+      "Allow devices to access memory directly without tying up the CPU",
+      "Increase instruction fetch rate from cache",
+      "Replace interrupts entirely",
+      "Encrypt memory transfers"
+    ],
+    answer: 0,
+    explanation: "DMA permits I/O modules to transfer directly to/from memory, freeing CPU. :contentReference[oaicite:37]{index=37}"
+  },
+  {
+    q: "On a shared bus, the address bus is responsible for:",
+    options: [
+      "Transferring payload data between devices",
+      "Carrying timing and control strobes only",
+      "Specifying the source or destination of data on the data bus",
+      "Providing power to peripherals"
+    ],
+    answer: 2,
+    explanation: "Address bus selects the memory location or I/O port; data bus carries actual data. :contentReference[oaicite:38]{index=38}"
+  },
+  {
+    q: "Which of these is NOT a class of interrupt listed in the lecture?",
+    options: ["Program (trap)", "Timer", "I/O", "User-mode system call"],
+    answer: 3,
+    explanation: "The slide lists Program, Timer, I/O, and Hardware failure; a 'User-mode system call' is not classified there. :contentReference[oaicite:39]{index=39}"
+  },
+  {
+    q: "Packetized data transfer in modern interconnects provides:",
+    options: [
+      "Only lower latency but no error control",
+      "Headers, error control, routing and better multiplexing",
+      "Fixed-size frames without control information",
+      "Guaranteed in-order delivery only"
+    ],
+    answer: 1,
+    explanation: "Packets include headers and error codes enabling routing, error control and multiplexing. :contentReference[oaicite:40]{index=40}"
+  },
+  {
+    q: "What problem does point-to-point interconnect address that wide synchronous buses struggle with?",
+    options: [
+      "Insufficient software APIs",
+      "Electrical timing and synchronization constraints at high frequency",
+      "Lack of address lines",
+      "Too many I/O devices"
+    ],
+    answer: 1,
+    explanation: "At high data rates, synchronization/skew across many lines becomes problematic; point-to-point reduces that problem. :contentReference[oaicite:41]{index=41}"
+  },
+  {
+    q: "What is the function of an I/O Address Register (I/OAR)?",
+    options: [
+      "To store data being transferred between CPU and memory",
+      "To specify a particular I/O device or port",
+      "To hold the next instruction address",
+      "To buffer disk sectors"
+    ],
+    answer: 1,
+    explanation: "I/OAR selects the particular device or port for an I/O operation. :contentReference[oaicite:42]{index=42}"
+  },
+  {
+    q: "Which statement about bus width is correct?",
+    options: [
+      "Wider buses can transfer more bits per cycle and often improve throughput",
+      "Wider buses always decrease latency",
+      "Bus width only affects addressable memory, not data throughput",
+      "Wider buses remove need for arbitration"
+    ],
+    answer: 0,
+    explanation: "Wider data buses move more bits per transfer, improving throughput though other factors matter too. :contentReference[oaicite:43]{index=43}"
+  },
+  {
+    q: "Which is a mitigation when a shared bus becomes a bottleneck?",
+    options: [
+      "Increase bus length",
+      "Reduce bus width",
+      "Use multiple bus hierarchies or point-to-point links",
+      "Disable DMA"
+    ],
+    answer: 2,
+    explanation: "Multiple hierarchies or point-to-point architectures reduce contention and improve scalability. :contentReference[oaicite:44]{index=44}"
+  },
+  {
+    q: "QuickPath Interconnect (QPI) introduced which important design features?",
+    options: [
+      "Synchronous shared parallel bus using control lines",
+      "Direct pairwise connections, layered protocol, and packetized transfers",
+      "Single global clock across CPU and I/O",
+      "No error control in transfers"
+    ],
+    answer: 1,
+    explanation: "QPI uses direct links, layered protocol, and packetized data transfer. :contentReference[oaicite:45]{index=45}"
+  },
+  {
+    q: "Nested interrupts allow:",
+    options: [
+      "Lower-priority handlers to preempt higher-priority handlers",
+      "Higher-priority interrupts to preempt current interrupt handlers",
+      "Interrupts to be handled only at program termination",
+      "Disablement of all further interrupts"
+    ],
+    answer: 1,
+    explanation: "Nested processing allows higher-priority interrupts to interrupt a lower-priority handler. :contentReference[oaicite:46]{index=46}"
+  },
+  {
+    q: "Which component typically increments after fetching an instruction?",
+    options: ["IR", "PC", "MBR", "I/OAR"],
+    answer: 1,
+    explanation: "The program counter is incremented so next instruction is fetched unless changed by control flow. :contentReference[oaicite:47]{index=47}"
+  },
+  {
+    q: "During an ADD instruction that uses a memory operand, the CPU must:",
+    options: [
+      "Write operand to disk before adding",
+      "Fetch operand from memory into MBR, then add to AC",
+      "Increment the MAR after executing the add",
+      "Use I/OAR to address the operand"
+    ],
+    answer: 1,
+    explanation: "Operand is read into MBR then arithmetic is performed (e.g., AC += MBR). :contentReference[oaicite:48]{index=48}"
+  },
+  {
+    q: "What does the control bus carry?",
+    options: [
+      "Only addresses",
+      "Commands, timing information, and control signals",
+      "Only data payload",
+      "Power for modules"
+    ],
+    answer: 1,
+    explanation: "Control bus transmits commands (read/write) and timing strobes to coordinate transfers. :contentReference[oaicite:49]{index=49}"
+  },
+  {
+    q: "Which is a likely negative effect of excessive interrupt nesting?",
+    options: [
+      "Long latency for low-priority handlers and possible stack overflow",
+      "Faster execution of low-priority code",
+      "Elimination of DMA",
+      "Higher bus width"
+    ],
+    answer: 0,
+    explanation: "Too much nesting increases stack usage and can delay low-priority processing; OS mitigations exist. :contentReference[oaicite:50]{index=50}"
+  },
+  {
+    q: "What is bus arbitration?",
+    options: [
+      "A protocol for encrypting bus transfers",
+      "A method to decide which device may use the shared bus at a time",
+      "A method to increase bus width dynamically",
+      "None of the above"
+    ],
+    answer: 1,
+    explanation: "Arbitration ensures orderly access to a shared bus. :contentReference[oaicite:51]{index=51}"
+  },
+  {
+    q: "Why did conventional shared buses start to break down for I/O?",
+    options: [
+      "Because devices became cheaper",
+      "Because higher-performance I/O required higher data rates and lower latencies",
+      "Because software stopped using I/O",
+      "Because MAR/MBR registers were removed"
+    ],
+    answer: 1,
+    explanation: "High-performance I/O devices demanded bandwidth and low latency beyond what shared buses could provide efficiently. :contentReference[oaicite:52]{index=52}"
+  },
+  {
+    q: "PCI Express (PCIe) primarily differs from PCI by using:",
+    options: [
+      "A single shared parallel bus",
+      "Point-to-point serial lanes and packetized communication",
+      "No address lines",
+      "Memory-mapped I/O only"
+    ],
+    answer: 1,
+    explanation: "PCIe uses serial lanes (point-to-point) and packet-based transfers for higher capacity and scalability. :contentReference[oaicite:53]{index=53}"
+  },
+  {
+    q: "Which situation best demonstrates using DMA?",
+    options: [
+      "CPU increments PC to fetch instructions",
+      "Large file transfer between disk and main memory without CPU byte-by-byte moves",
+      "Fetching a single byte from a register",
+      "Running an interrupt handler that toggles an LED"
+    ],
+    answer: 1,
+    explanation: "DMA handles large block transfers between device and memory without continuous CPU intervention. :contentReference[oaicite:54]{index=54}"
+  },
+  {
+    q: "The data bus width most directly affects:",
+    options: [
+      "How many devices can be connected to the bus",
+      "How many bits are transferred per bus cycle",
+      "The number of interrupts supported",
+      "The length of the address bus"
+    ],
+    answer: 1,
+    explanation: "Data bus width defines bits moved per transfer and influences throughput. :contentReference[oaicite:55]{index=55}"
+  },
+  {
+    q: "Control signals specifying read or write and data-valid windows are carried on:",
+    options: ["Data bus", "Address bus", "Control bus", "Power rail"],
+    answer: 2,
+    explanation: "Control bus carries read/write commands and timing strobes that indicate validity windows. :contentReference[oaicite:56]{index=56}"
+  },
+  {
+    q: "Which is TRUE about instruction decode stage?",
+    options: [
+      "It executes arithmetic operations",
+      "It interprets the fetched opcode and prepares control signals",
+      "It is only used in microcoded processors",
+      "It directly accesses disk"
+    ],
+    answer: 1,
+    explanation: "Decode translates the opcode into control signals and identifies required operands. :contentReference[oaicite:57]{index=57}"
+  },
+  {
+    q: "In a modern multicore system, why are layered protocols (as in QPI) useful?",
+    options: [
+      "They eliminate the need for caches",
+      "They separate concerns (physical/link/transport) and simplify design, routing, and error handling",
+      "They force a single clock domain",
+      "They remove the need for memory management"
+    ],
+    answer: 1,
+    explanation: "Layered protocols modularize link behavior and enable features like routing and error control. :contentReference[oaicite:58]{index=58}"
+  },
+  {
+    q: "Which best describes the instruction register (IR)?",
+    options: [
+      "Holds data read from I/O devices",
+      "Holds the current instruction being executed",
+      "Counts the number of interrupts",
+      "Stores the next memory address to write"
+    ],
+    answer: 1,
+    explanation: "IR contains the fetched instruction that is being decoded/executed. :contentReference[oaicite:59]{index=59}"
+  }
+];
+
+let current = 0;
+const answers = new Array(QUESTIONS.length).fill(null);
+const startTime = Date.now();
+const TOTAL_TIME = 60 * 60; // seconds (1 hour)
+let remaining = TOTAL_TIME;
+let timerInterval = null;
+
+function renderQuestion(idx){
+  const q = QUESTIONS[idx];
+  document.getElementById('qnum').textContent = `Question ${idx+1}`;
+  document.getElementById('progress').textContent = `${idx+1} / ${QUESTIONS.length}`;
+  document.getElementById('questionText').textContent = q.q;
+  const opts = document.getElementById('options');
+  opts.innerHTML = '';
+  q.options.forEach((opt,i)=>{
+    const div = document.createElement('div');
+    div.className = 'opt' + ((answers[idx]===i)?' selected':'');
+    div.tabIndex = 0;
+    div.setAttribute('role','button');
+    div.innerHTML = `<div style="font-weight:700">${String.fromCharCode(65+i)}</div><div style="flex:1">${opt}</div>`;
+    div.onclick = ()=>{ answers[idx] = i; renderQuestion(idx); };
+    div.onkeypress = (e)=>{ if(e.key==='Enter' || e.key===' ') { answers[idx]=i; renderQuestion(idx); } };
+    opts.appendChild(div);
+  });
+}
+
+document.getElementById('prevBtn').addEventListener('click', ()=>{
+  if(current>0){ current--; renderQuestion(current); }
+});
+document.getElementById('nextBtn').addEventListener('click', ()=>{
+  if(current < QUESTIONS.length-1){ current++; renderQuestion(current); }
+});
+document.getElementById('submitBtn').addEventListener('click', submitExam);
+
+function submitExam(){
+  if(timerInterval){ clearInterval(timerInterval); timerInterval=null; }
+  // Grade
+  let score=0;
+  const per = [];
+  QUESTIONS.forEach((q,i)=>{
+    const correct = q.answer;
+    const user = answers[i];
+    const ok = (user === correct);
+    if(ok) score++;
+    per.push({q:q.q, selected: user, correct, ok, explanation:q.explanation});
+  });
+  // Show results
+  const card = document.getElementById('card');
+  card.innerHTML = `
+    <div style="display:flex;justify-content:space-between;align-items:center">
+      <div style="font-size:22px;font-weight:800">Exam Results</div>
+      <div style="font-size:18px">Score: ${score} / ${QUESTIONS.length} (${Math.round(100*score/QUESTIONS.length)}%)</div>
+    </div>
+    <div style="height:16px"></div>
+    <div class="results" style="overflow:auto;flex:1">
+      ${per.map((p,idx)=>`
+        <div style="padding:12px;border-bottom:1px dashed rgba(255,255,255,0.03)">
+          <div style="font-weight:700">Q${idx+1} ${p.ok?'<span style="color:#34d399">✔</span>':'<span style="color:#fb7185">✖</span>'}</div>
+          <div style="margin-top:6px">${p.q}</div>
+          <div style="margin-top:8px;color:var(--muted)">Your answer: ${p.selected==null?'<em>Unanswered</em>':String.fromCharCode(65+p.selected) + '. ' + QUESTIONS[idx].options[p.selected]}</div>
+          <div style="margin-top:6px;color:var(--muted)">Correct: ${String.fromCharCode(65+p.correct)}. ${QUESTIONS[idx].options[p.correct]}</div>
+          <div style="margin-top:6px;font-size:13px;color:var(--muted)">${QUESTIONS[idx].explanation}</div>
+        </div>
+      `).join('')}
+    </div>
+    <div style="height:12px"></div>
+    <div style="display:flex;gap:10px;justify-content:flex-end">
+      <button class="btn" onclick="location.reload()">Retake Exam</button>
+    </div>
+  `;
+  window.scrollTo(0,0);
+}
+
+// Timer
+function formatTime(s){
+  const mm = Math.floor(s/60), ss = s%60;
+  const mmh = String(Math.floor(mm%60)).padStart(2,'0');
+  const hh = Math.floor(mm/60);
+  return `${String(hh).padStart(2,'0')}:${mmh}:${String(ss).padStart(2,'0')}`;
+}
+
+function tick(){
+  const elapsed = Math.floor((Date.now() - startTime)/1000);
+  remaining = TOTAL_TIME - elapsed;
+  if(remaining < 0) remaining = 0;
+  document.getElementById('timer').textContent = formatTime(remaining);
+  if(remaining <= 0){
+    // auto submit
+    submitExam();
+  }
+}
+
+// initialize
+renderQuestion(current);
+timerInterval = setInterval(tick, 500);
+tick();
+</script>
+</body>
+</html>
