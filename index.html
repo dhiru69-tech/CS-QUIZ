@@ -1,0 +1,961 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Computer Architecture Quiz</title>
+    <style>
+        :root {
+            --primary: #3498db;
+            --secondary: #2c3e50;
+            --success: #2ecc71;
+            --danger: #e74c3c;
+            --warning: #f39c12;
+            --light: #ecf0f1;
+            --dark: #2c3e50;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        
+        .container {
+            width: 100%;
+            max-width: 800px;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+        
+        .header {
+            background: var(--secondary);
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+        
+        .timer-container {
+            background: var(--primary);
+            color: white;
+            padding: 10px;
+            text-align: center;
+            font-size: 1.2rem;
+            font-weight: bold;
+        }
+        
+        .quiz-container {
+            padding: 30px;
+        }
+        
+        .question-container {
+            margin-bottom: 25px;
+        }
+        
+        .question-number {
+            font-size: 1rem;
+            color: var(--secondary);
+            margin-bottom: 5px;
+        }
+        
+        .question-text {
+            font-size: 1.3rem;
+            font-weight: 600;
+            margin-bottom: 20px;
+            line-height: 1.5;
+        }
+        
+        .options-container {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        
+        .option {
+            padding: 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+        }
+        
+        .option:hover {
+            background-color: #f5f5f5;
+            border-color: var(--primary);
+        }
+        
+        .option.selected {
+            background-color: #e3f2fd;
+            border-color: var(--primary);
+        }
+        
+        .option-letter {
+            display: inline-flex;
+            justify-content: center;
+            align-items: center;
+            width: 30px;
+            height: 30px;
+            background-color: var(--light);
+            border-radius: 50%;
+            margin-right: 15px;
+            font-weight: bold;
+        }
+        
+        .navigation {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 30px;
+        }
+        
+        button {
+            padding: 12px 25px;
+            border: none;
+            border-radius: 6px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        
+        .btn-prev {
+            background-color: var(--light);
+            color: var(--dark);
+        }
+        
+        .btn-next {
+            background-color: var(--primary);
+            color: white;
+        }
+        
+        .btn-submit {
+            background-color: var(--success);
+            color: white;
+        }
+        
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        
+        button:disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+        
+        .progress-bar {
+            height: 8px;
+            background-color: #e0e0e0;
+            border-radius: 4px;
+            margin: 20px 0;
+            overflow: hidden;
+        }
+        
+        .progress {
+            height: 100%;
+            background-color: var(--primary);
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+        
+        .welcome-screen, .results-screen {
+            text-align: center;
+            padding: 40px;
+        }
+        
+        .welcome-screen h2, .results-screen h2 {
+            margin-bottom: 20px;
+            color: var(--secondary);
+        }
+        
+        .welcome-screen p, .results-screen p {
+            margin-bottom: 25px;
+            line-height: 1.6;
+            color: #555;
+        }
+        
+        .btn-start {
+            background-color: var(--primary);
+            color: white;
+            font-size: 1.1rem;
+            padding: 15px 40px;
+        }
+        
+        .score-display {
+            font-size: 3rem;
+            font-weight: bold;
+            color: var(--primary);
+            margin: 20px 0;
+        }
+        
+        .correct-answers {
+            text-align: left;
+            margin-top: 30px;
+            background-color: #f9f9f9;
+            padding: 20px;
+            border-radius: 8px;
+        }
+        
+        .correct-answer {
+            margin-bottom: 15px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .question-review {
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+        
+        .user-answer, .correct-answer-text {
+            margin: 5px 0;
+        }
+        
+        .user-answer.correct {
+            color: var(--success);
+        }
+        
+        .user-answer.incorrect {
+            color: var(--danger);
+        }
+        
+        .time-up-message {
+            background-color: var(--warning);
+            color: white;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        
+        @media (max-width: 600px) {
+            .container {
+                border-radius: 0;
+            }
+            
+            .quiz-container {
+                padding: 20px;
+            }
+            
+            .question-text {
+                font-size: 1.1rem;
+            }
+            
+            .navigation {
+                flex-direction: column;
+                gap: 10px;
+            }
+            
+            button {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Computer Architecture Quiz</h1>
+            <p>Test your knowledge of computer components and functioning</p>
+        </div>
+        
+        <div class="timer-container">
+            <div id="timer">Time Remaining: 60:00</div>
+        </div>
+        
+        <div class="progress-bar">
+            <div class="progress" id="progress"></div>
+        </div>
+        
+        <!-- Welcome Screen -->
+        <div class="welcome-screen" id="welcomeScreen">
+            <h2>Welcome to the Computer Architecture Quiz</h2>
+            <p>This quiz contains 40 questions about computer components, von Neumann architecture, instruction cycles, interrupts, and bus systems.</p>
+            <p>You will have 60 minutes to complete the quiz. The timer will start when you click the "Start Quiz" button.</p>
+            <p>Good luck!</p>
+            <button class="btn-start" id="startQuiz">Start Quiz</button>
+        </div>
+        
+        <!-- Quiz Screen -->
+        <div class="quiz-container" id="quizContainer" style="display: none;">
+            <div class="question-container">
+                <div class="question-number">Question <span id="currentQuestion">1</span> of 40</div>
+                <div class="question-text" id="questionText"></div>
+                <div class="options-container" id="optionsContainer"></div>
+            </div>
+            
+            <div class="navigation">
+                <button class="btn-prev" id="prevBtn" disabled>Previous</button>
+                <button class="btn-next" id="nextBtn">Next</button>
+                <button class="btn-submit" id="submitBtn" style="display: none;">Submit Quiz</button>
+            </div>
+        </div>
+        
+        <!-- Results Screen -->
+        <div class="results-screen" id="resultsScreen" style="display: none;">
+            <h2>Quiz Results</h2>
+            <div class="score-display" id="scoreDisplay"></div>
+            <p id="resultMessage"></p>
+            <button class="btn-start" id="restartQuiz">Take Quiz Again</button>
+            
+            <div class="correct-answers" id="correctAnswers" style="display: none;">
+                <h3>Review Your Answers</h3>
+                <div id="answersList"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Quiz questions and answers
+        const quizData = [
+            {
+                question: "Which of the following is NOT a key concept of von Neumann architecture?",
+                options: [
+                    "Data and instructions are stored in a single read-write memory",
+                    "Memory contents are addressable by location without regard to data type",
+                    "Execution occurs in a strictly sequential fashion",
+                    "Instructions are executed in parallel using multiple processors"
+                ],
+                answer: 3
+            },
+            {
+                question: "What is the purpose of the Memory Address Register (MAR)?",
+                options: [
+                    "To store the data to be written to memory",
+                    "To specify the address in memory for the next read or write",
+                    "To hold the instruction being executed",
+                    "To store temporary results of arithmetic operations"
+                ],
+                answer: 1
+            },
+            {
+                question: "Which component of the CPU is responsible for interpreting instructions?",
+                options: [
+                    "Arithmetic Logic Unit (ALU)",
+                    "Instruction Register (IR)",
+                    "Instruction Interpreter",
+                    "Program Counter (PC)"
+                ],
+                answer: 2
+            },
+            {
+                question: "What happens during the fetch cycle of the instruction cycle?",
+                options: [
+                    "The processor executes the instruction",
+                    "The processor checks for interrupts",
+                    "The processor fetches an instruction from memory",
+                    "The processor writes results to memory"
+                ],
+                answer: 2
+            },
+            {
+                question: "Which register holds the address of the next instruction to be fetched?",
+                options: [
+                    "Instruction Register (IR)",
+                    "Memory Buffer Register (MBR)",
+                    "Program Counter (PC)",
+                    "Accumulator (AC)"
+                ],
+                answer: 2
+            },
+            {
+                question: "What is the function of the I/O Address Register (I/OAR)?",
+                options: [
+                    "It contains data to be written to an I/O device",
+                    "It specifies a particular I/O device",
+                    "It holds instructions for I/O operations",
+                    "It stores the status of I/O operations"
+                ],
+                answer: 1
+            },
+            {
+                question: "Which of the following is NOT a category of processor action during instruction execution?",
+                options: [
+                    "Processor-memory data transfer",
+                    "Processor-I/O data transfer",
+                    "Control operations",
+                    "Memory compression"
+                ],
+                answer: 3
+            },
+            {
+                question: "What is the purpose of interrupts in a computer system?",
+                options: [
+                    "To speed up instruction execution",
+                    "To allow the processor to handle events asynchronously",
+                    "To increase memory capacity",
+                    "To reduce power consumption"
+                ],
+                answer: 1
+            },
+            {
+                question: "Which type of interrupt is generated by a timer within the processor?",
+                options: [
+                    "Program interrupt",
+                    "Timer interrupt",
+                    "I/O interrupt",
+                    "Hardware failure interrupt"
+                ],
+                answer: 1
+            },
+            {
+                question: "What is Direct Memory Access (DMA)?",
+                options: [
+                    "A method for the processor to directly access I/O devices",
+                    "A technique for I/O modules to exchange data directly with memory",
+                    "A way for the processor to access memory without using addresses",
+                    "A protocol for memory-to-memory data transfer"
+                ],
+                answer: 1
+            },
+            {
+                question: "Which bus is used to designate the source or destination of data?",
+                options: [
+                    "Data Bus",
+                    "Address Bus",
+                    "Control Bus",
+                    "System Bus"
+                ],
+                answer: 1
+            },
+            {
+                question: "What determines the maximum possible memory capacity of a system?",
+                options: [
+                    "The width of the data bus",
+                    "The width of the address bus",
+                    "The speed of the control bus",
+                    "The size of the system bus"
+                ],
+                answer: 1
+            },
+            {
+                question: "Which characteristic of a bus allows it to be a shared transmission medium?",
+                options: [
+                    "Signals are available for reception by all attached devices",
+                    "Each device has a dedicated connection",
+                    "Only one device can transmit at a time",
+                    "It uses packet-switched communication"
+                ],
+                answer: 0
+            },
+            {
+                question: "What is a key disadvantage of a single shared bus architecture?",
+                options: [
+                    "It requires more physical space",
+                    "It can become a bottleneck as data transfer demands increase",
+                    "It is more expensive to implement",
+                    "It is incompatible with modern processors"
+                ],
+                answer: 1
+            },
+            {
+                question: "Which technology uses point-to-point interconnects rather than shared buses?",
+                options: [
+                    "PCI",
+                    "Quick Path Interconnect (QPI)",
+                    "ISA",
+                    "VME bus"
+                ],
+                answer: 1
+            },
+            {
+                question: "What is a key feature of Quick Path Interconnect (QPI)?",
+                options: [
+                    "It uses a shared bus architecture",
+                    "It employs packetized data transfer",
+                    "It relies on centralized arbitration",
+                    "It is limited to connecting only two devices"
+                ],
+                answer: 1
+            },
+            {
+                question: "Which component in a computer system is primarily responsible for arithmetic and logic operations?",
+                options: [
+                    "Control Unit",
+                    "Memory Unit",
+                    "Execution Unit",
+                    "I/O Controller"
+                ],
+                answer: 2
+            },
+            {
+                question: "In the instruction cycle state diagram, what happens after an instruction operation decoding?",
+                options: [
+                    "The processor fetches the next instruction",
+                    "The processor calculates the operand address",
+                    "The processor executes the instruction",
+                    "The processor checks for interrupts"
+                ],
+                answer: 1
+            },
+            {
+                question: "What is the purpose of the Memory Buffer Register (MBR)?",
+                options: [
+                    "It holds the address for memory access",
+                    "It contains data to be written to memory or received from memory",
+                    "It stores the current instruction",
+                    "It keeps track of the program execution sequence"
+                ],
+                answer: 1
+            },
+            {
+                question: "Which statement about interrupts is TRUE?",
+                options: [
+                    "Interrupts always slow down program execution",
+                    "Interrupts allow more efficient use of the processor",
+                    "Interrupts are only generated by I/O devices",
+                    "Interrupts cannot be disabled"
+                ],
+                answer: 1
+            },
+            {
+                question: "What is the function of the control bus?",
+                options: [
+                    "To transmit data between components",
+                    "To specify memory addresses",
+                    "To control the access and use of data and address lines",
+                    "To provide power to system components"
+                ],
+                answer: 2
+            },
+            {
+                question: "In a multiple bus hierarchy, what is a common reason for using different buses?",
+                options: [
+                    "To reduce the cost of the system",
+                    "To allow different voltage levels for components",
+                    "To prevent bus bottlenecks and improve performance",
+                    "To make the system more compatible with older devices"
+                ],
+                answer: 2
+            },
+            {
+                question: "Which component is typically connected directly to the processor via a local bus?",
+                options: [
+                    "Expansion cards",
+                    "Main memory",
+                    "Hard disk drives",
+                    "Cache memory"
+                ],
+                answer: 3
+            },
+            {
+                question: "What is the primary advantage of point-to-point interconnects over shared buses?",
+                options: [
+                    "They are less expensive to implement",
+                    "They have lower latency and higher data rates",
+                    "They support more devices per connection",
+                    "They are easier to troubleshoot"
+                ],
+                answer: 1
+            },
+            {
+                question: "Which of the following is NOT a type of transfer that the interconnection structure must support?",
+                options: [
+                    "Memory to processor",
+                    "Processor to memory",
+                    "I/O to processor",
+                    "Processor to cache (without going through memory)"
+                ],
+                answer: 3
+            },
+            {
+                question: "What is the role of the I/O buffer register (I/OBR)?",
+                options: [
+                    "To specify a particular I/O device",
+                    "To hold the address for I/O operations",
+                    "To exchange data between an I/O module and the CPU",
+                    "To control the timing of I/O operations"
+                ],
+                answer: 2
+            },
+            {
+                question: "Which term describes a program that is permanently wired into the computer hardware?",
+                options: [
+                    "Firmware",
+                    "Hardwired program",
+                    "Microcode",
+                    "Assembly program"
+                ],
+                answer: 1
+            },
+            {
+                question: "In the context of computer architecture, what does 'execution unit' refer to?",
+                options: [
+                    "The part of the CPU that performs arithmetic and logic operations",
+                    "The component that handles instruction fetching",
+                    "The module responsible for interrupt handling",
+                    "The unit that controls memory access"
+                ],
+                answer: 0
+            },
+            {
+                question: "Which statement about the program counter (PC) is FALSE?",
+                options: [
+                    "It holds the address of the next instruction to be executed",
+                    "It is automatically incremented after each instruction fetch",
+                    "It can be modified by control instructions",
+                    "It stores the instruction currently being executed"
+                ],
+                answer: 3
+            },
+            {
+                question: "What is the purpose of the instruction register (IR)?",
+                options: [
+                    "To hold the address of the next instruction",
+                    "To store the instruction currently being executed",
+                    "To keep track of the number of instructions executed",
+                    "To contain data being processed by the current instruction"
+                ],
+                answer: 1
+            },
+            {
+                question: "Which component is responsible for generating control signals based on instructions?",
+                options: [
+                    "Arithmetic Logic Unit (ALU)",
+                    "Control Unit",
+                    "Memory Management Unit (MMU)",
+                    "I/O Controller"
+                ],
+                answer: 1
+            },
+            {
+                question: "What happens when an interrupt occurs during program execution?",
+                options: [
+                    "The processor immediately halts all operations",
+                    "The current instruction is aborted and discarded",
+                    "The processor saves its state and transfers control to an interrupt handler",
+                    "The program counter is reset to zero"
+                ],
+                answer: 2
+            },
+            {
+                question: "Which of the following is an advantage of using interrupts for I/O operations?",
+                options: [
+                    "It simplifies the hardware design",
+                    "It allows the processor to perform other tasks while waiting for I/O",
+                    "It reduces the need for memory",
+                    "It makes programming easier"
+                ],
+                answer: 1
+            },
+            {
+                question: "In a system with multiple interrupts, how are they typically handled?",
+                options: [
+                    "All interrupts are processed simultaneously",
+                    "Interrupts are ignored if the processor is busy",
+                    "Interrupts are processed based on priority",
+                    "Only one interrupt can be active at any time"
+                ],
+                answer: 2
+            },
+            {
+                question: "What is the primary function of the system bus?",
+                options: [
+                    "To connect the processor to cache memory",
+                    "To connect major computer components (processor, memory, I/O)",
+                    "To provide a high-speed connection for peripheral devices",
+                    "To connect expansion cards to the motherboard"
+                ],
+                answer: 1
+            },
+            {
+                question: "Which factor determines how many bits can be transferred at a time on the data bus?",
+                options: [
+                    "The clock speed of the processor",
+                    "The width of the data bus",
+                    "The size of the memory",
+                    "The speed of the I/O devices"
+                ],
+                answer: 1
+            },
+            {
+                question: "What is PCI Express (PCIe)?",
+                options: [
+                    "A shared bus architecture for connecting peripheral devices",
+                    "A point-to-point interconnect scheme for high-speed I/O",
+                    "A protocol for memory-to-memory data transfer",
+                    "A standard for connecting processors in multiprocessor systems"
+                ],
+                answer: 1
+            },
+            {
+                question: "Which statement about the von Neumann architecture is TRUE?",
+                options: [
+                    "It uses separate memory for data and instructions",
+                    "It allows parallel execution of multiple instructions",
+                    "It is the basis for most contemporary computer designs",
+                    "It requires specialized hardware for different data types"
+                ],
+                answer: 2
+            },
+            {
+                question: "What is the purpose of the accumulator (AC) in a CPU?",
+                options: [
+                    "To store the address of the next instruction",
+                    "To hold the instruction being executed",
+                    "To provide temporary storage for arithmetic operations",
+                    "To control the sequence of instruction execution"
+                ],
+                answer: 2
+            },
+            {
+                question: "Which component issues read or write commands to memory in a DMA transfer?",
+                options: [
+                    "The processor",
+                    "The I/O module",
+                    "The memory controller",
+                    "The system bus arbiter"
+                ],
+                answer: 1
+            }
+        ];
+
+        // DOM elements
+        const welcomeScreen = document.getElementById('welcomeScreen');
+        const quizContainer = document.getElementById('quizContainer');
+        const resultsScreen = document.getElementById('resultsScreen');
+        const startQuizBtn = document.getElementById('startQuiz');
+        const timerElement = document.getElementById('timer');
+        const progressElement = document.getElementById('progress');
+        const currentQuestionElement = document.getElementById('currentQuestion');
+        const questionTextElement = document.getElementById('questionText');
+        const optionsContainer = document.getElementById('optionsContainer');
+        const prevBtn = document.getElementById('prevBtn');
+        const nextBtn = document.getElementById('nextBtn');
+        const submitBtn = document.getElementById('submitBtn');
+        const scoreDisplay = document.getElementById('scoreDisplay');
+        const resultMessage = document.getElementById('resultMessage');
+        const correctAnswers = document.getElementById('correctAnswers');
+        const answersList = document.getElementById('answersList');
+        const restartQuizBtn = document.getElementById('restartQuiz');
+
+        // Quiz state variables
+        let currentQuestion = 0;
+        let userAnswers = Array(quizData.length).fill(null);
+        let timer;
+        let timeLeft = 60 * 60; // 60 minutes in seconds
+        let quizStarted = false;
+
+        // Initialize the quiz
+        function initQuiz() {
+            // Reset quiz state
+            currentQuestion = 0;
+            userAnswers = Array(quizData.length).fill(null);
+            timeLeft = 60 * 60;
+            quizStarted = false;
+            
+            // Show welcome screen
+            welcomeScreen.style.display = 'block';
+            quizContainer.style.display = 'none';
+            resultsScreen.style.display = 'none';
+            
+            // Update timer display
+            updateTimerDisplay();
+        }
+
+        // Start the quiz
+        function startQuiz() {
+            quizStarted = true;
+            welcomeScreen.style.display = 'none';
+            quizContainer.style.display = 'block';
+            
+            // Start the timer
+            startTimer();
+            
+            // Display the first question
+            displayQuestion();
+        }
+
+        // Display the current question
+        function displayQuestion() {
+            const question = quizData[currentQuestion];
+            
+            // Update question number
+            currentQuestionElement.textContent = currentQuestion + 1;
+            
+            // Update question text
+            questionTextElement.textContent = question.question;
+            
+            // Clear previous options
+            optionsContainer.innerHTML = '';
+            
+            // Create new options
+            question.options.forEach((option, index) => {
+                const optionElement = document.createElement('div');
+                optionElement.className = 'option';
+                if (userAnswers[currentQuestion] === index) {
+                    optionElement.classList.add('selected');
+                }
+                
+                optionElement.innerHTML = `
+                    <span class="option-letter">${String.fromCharCode(65 + index)}</span>
+                    <span class="option-text">${option}</span>
+                `;
+                
+                optionElement.addEventListener('click', () => selectOption(index));
+                optionsContainer.appendChild(optionElement);
+            });
+            
+            // Update navigation buttons
+            updateNavigationButtons();
+            
+            // Update progress bar
+            updateProgressBar();
+        }
+
+        // Select an option
+        function selectOption(optionIndex) {
+            userAnswers[currentQuestion] = optionIndex;
+            displayQuestion();
+        }
+
+        // Update navigation buttons
+        function updateNavigationButtons() {
+            // Previous button
+            prevBtn.disabled = currentQuestion === 0;
+            
+            // Next button
+            if (currentQuestion === quizData.length - 1) {
+                nextBtn.style.display = 'none';
+                submitBtn.style.display = 'block';
+            } else {
+                nextBtn.style.display = 'block';
+                submitBtn.style.display = 'none';
+            }
+        }
+
+        // Update progress bar
+        function updateProgressBar() {
+            const progress = ((currentQuestion + 1) / quizData.length) * 100;
+            progressElement.style.width = `${progress}%`;
+        }
+
+        // Navigate to next question
+        function nextQuestion() {
+            if (currentQuestion < quizData.length - 1) {
+                currentQuestion++;
+                displayQuestion();
+            }
+        }
+
+        // Navigate to previous question
+        function prevQuestion() {
+            if (currentQuestion > 0) {
+                currentQuestion--;
+                displayQuestion();
+            }
+        }
+
+        // Start the timer
+        function startTimer() {
+            timer = setInterval(() => {
+                timeLeft--;
+                updateTimerDisplay();
+                
+                if (timeLeft <= 0) {
+                    endQuiz(true);
+                }
+            }, 1000);
+        }
+
+        // Update timer display
+        function updateTimerDisplay() {
+            const minutes = Math.floor(timeLeft / 60);
+            const seconds = timeLeft % 60;
+            timerElement.textContent = `Time Remaining: ${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+        }
+
+        // End the quiz
+        function endQuiz(timeUp = false) {
+            clearInterval(timer);
+            quizContainer.style.display = 'none';
+            resultsScreen.style.display = 'block';
+            
+            // Calculate score
+            let score = 0;
+            quizData.forEach((question, index) => {
+                if (userAnswers[index] === question.answer) {
+                    score++;
+                }
+            });
+            
+            // Display score
+            scoreDisplay.textContent = `${score}/${quizData.length}`;
+            
+            // Display result message
+            const percentage = (score / quizData.length) * 100;
+            let message = '';
+            
+            if (percentage >= 80) {
+                message = 'Excellent! You have a strong understanding of computer architecture.';
+            } else if (percentage >= 60) {
+                message = 'Good job! You have a solid foundation in computer architecture.';
+            } else if (percentage >= 40) {
+                message = 'Not bad! Review the material to improve your understanding.';
+            } else {
+                message = 'Keep studying! You\'ll improve with more practice.';
+            }
+            
+            if (timeUp) {
+                message = 'Time\'s up! ' + message;
+                resultsScreen.insertAdjacentHTML('afterbegin', '<div class="time-up-message">Time\'s up! Your quiz has been automatically submitted.</div>');
+            }
+            
+            resultMessage.textContent = message;
+            
+            // Show correct answers
+            showCorrectAnswers();
+        }
+
+        // Show correct answers
+        function showCorrectAnswers() {
+            answersList.innerHTML = '';
+            
+            quizData.forEach((question, index) => {
+                const answerElement = document.createElement('div');
+                answerElement.className = 'correct-answer';
+                
+                const userAnswerIndex = userAnswers[index];
+                const isCorrect = userAnswerIndex === question.answer;
+                
+                answerElement.innerHTML = `
+                    <div class="question-review">${index + 1}. ${question.question}</div>
+                    <div class="user-answer ${isCorrect ? 'correct' : 'incorrect'}">
+                        Your answer: ${userAnswerIndex !== null ? question.options[userAnswerIndex] : 'Not answered'}
+                        ${isCorrect ? ' ✓' : ' ✗'}
+                    </div>
+                    ${!isCorrect ? `<div class="correct-answer-text">Correct answer: ${question.options[question.answer]}</div>` : ''}
+                `;
+                
+                answersList.appendChild(answerElement);
+            });
+            
+            correctAnswers.style.display = 'block';
+        }
+
+        // Event listeners
+        startQuizBtn.addEventListener('click', startQuiz);
+        prevBtn.addEventListener('click', prevQuestion);
+        nextBtn.addEventListener('click', nextQuestion);
+        submitBtn.addEventListener('click', () => endQuiz(false));
+        restartQuizBtn.addEventListener('click', initQuiz);
+
+        // Initialize the quiz when the page loads
+        window.addEventListener('load', initQuiz);
+    </script>
+</body>
+</html>
